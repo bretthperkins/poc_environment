@@ -1,4 +1,4 @@
 name: poc-stack
 
 include:
-  - ./data/postgres/postgres.yml
+  - ./data/postgres/postgresql.yml
