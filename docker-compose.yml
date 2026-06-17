@@ -1,4 +1,45 @@
 name: poc-stack
 
-include:
-  - ./data/postgres/postgresql.yml
+services:
+  # The Database Layer
+  postgres:
+    image: postgres:17
+    container_name: poc_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INSTANCE: ${DB_INSTANCE}
+    ports:
+      - "${DB_HOST}:${DB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_INSTANCE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # The Node.js API Layer
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REPO_URL: "https://github.com/bretthperkins/poc_nodejs"
+        REPO_BRANCH: "main"
+    container_name: poc_node_api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      POSTGRES_PORT: ${DB_SERVER_PORT}
+      POSTGRES_HOST: ${DB_SERVER_HOST}
+      POSTGRES_USER: ${DB_SERVER_USER}
+      POSTGRES_PASSWORD: ${DB_SERVER_PASSWORD}
+      POSTGRES_INSTANCE: ${DB_SERVER_INSTANCE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        
+volumes:
+  pgdata:

@@ -1,0 +1,17 @@
+Find port usage:
+sof -i :3000  
+
+Kill PID:
+kill -9 <PID>
+
+Docker Compose:
+docker compose up --build 
+
+Connect to host:
+nc -zv 127.0.0.1 5432
+
+Show what has the port open:
+sudo lsof -i :5432 -P -n
+
+Start Docker:
+open -a Docker
