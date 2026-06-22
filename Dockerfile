@@ -3,7 +3,10 @@ FROM alpine/git:latest AS cloner
 WORKDIR /src
 ARG REPO_URL="https://github.com/bretthperkins/poc_nodejs"
 ARG REPO_BRANCH="main"
-RUN git clone --single-branch --branch ${REPO_BRANCH} ${REPO_URL} .
+# Build-time cache buster to force a fresh git clone when desired
+ARG CACHEBUST=0
+RUN git clone --single-branch --branch ${REPO_BRANCH} ${REPO_URL} . && \
+	echo "cloned ${REPO_URL}@${REPO_BRANCH} (cachebust=${CACHEBUST})"
 
 # Stage 2: Official, fully loaded Node environment
 FROM node:22-alpine
