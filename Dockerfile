@@ -15,6 +15,17 @@ WORKDIR /app
 # Copy the source code directly from the cloner stage
 COPY --from=cloner /src /app
 
+# Replace legacy DB_SERVER_* env accesses with API_DB_SERVER_* at build time
+# This updates source files cloned from the remote repo so the app uses the
+# new API-prefixed environment variables.
+RUN find /app -type f -name "*.js" -print0 \
+	| xargs -0 sed -i \
+		-e "s/process.env.DB_SERVER_USER/process.env.API_DB_SERVER_USER/g" \
+		-e "s/process.env.DB_SERVER_PASSWORD/process.env.API_DB_SERVER_PASSWORD/g" \
+		-e "s/process.env.DB_SERVER_HOST/process.env.API_DB_SERVER_HOST/g" \
+		-e "s/process.env.DB_SERVER_PORT/process.env.API_DB_SERVER_PORT/g" \
+		-e "s/process.env.DB_SERVER_INSTANCE/process.env.API_DB_SERVER_INSTANCE/g" || true
+
 # Install all development dependencies (including nodemon)
 RUN npm install
 
