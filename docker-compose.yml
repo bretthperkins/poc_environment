@@ -2,9 +2,9 @@ name: poc-stack
 
 services:
   # The Database Layer
-  postgres:
+  api_postgres:
     image: postgres:17
-    container_name: poc_postgres
+    container_name: api_postgres
     environment:
       POSTGRES_USER: ${API_DB_USER}
       POSTGRES_PASSWORD: ${API_DB_PASSWORD}
@@ -46,19 +46,8 @@ services:
       API_DB_SERVER_USER: ${API_DB_SERVER_USER}
       API_DB_SERVER_PASSWORD: ${API_DB_SERVER_PASSWORD}
       API_DB_SERVER_INSTANCE: ${API_DB_SERVER_INSTANCE}
-      # Backwards-compat: expose legacy var names so existing app code still works
-      DB_SERVER_PORT: ${API_DB_SERVER_PORT}
-      DB_SERVER_HOST: ${API_DB_SERVER_HOST}
-      DB_SERVER_USER: ${API_DB_SERVER_USER}
-      DB_SERVER_PASSWORD: ${API_DB_SERVER_PASSWORD}
-      DB_SERVER_INSTANCE: ${API_DB_SERVER_INSTANCE}
-      POSTGRES_PORT: ${API_DB_SERVER_PORT}
-      POSTGRES_HOST: ${API_DB_SERVER_HOST}
-      POSTGRES_USER: ${API_DB_SERVER_USER}
-      POSTGRES_PASSWORD: ${API_DB_SERVER_PASSWORD}
-      POSTGRES_INSTANCE: ${API_DB_SERVER_INSTANCE}
     depends_on:
-      postgres:
+      api_postgres:
         condition: service_healthy
         
 volumes:
