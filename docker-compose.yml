@@ -16,9 +16,31 @@ services:
       # Bind Postgres to localhost using only API_DB_PORT (simplified)
       - "127.0.0.1:${API_DB_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - api_pgdata:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d/api:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${API_DB_USER} -d ${API_DB_INSTANCE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  auth_postgres:
+    image: postgres:17
+    container_name: auth_postgres
+    environment:
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+      # Official Postgres image uses POSTGRES_DB to create the initial database
+      POSTGRES_DB: ${AUTH_DB_INSTANCE}
+      # Keep POSTGRES_INSTANCE for compatibility with the app config
+      POSTGRES_INSTANCE: ${AUTH_DB_INSTANCE}
+    ports:
+      # Bind Postgres to localhost using only AUTH_DB_PORT (simplified)
+      - "127.0.0.1:${AUTH_DB_PORT:-5433}:5432"
+    volumes:
+      - auth_pgdata:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d/auth:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_INSTANCE}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -49,6 +71,31 @@ services:
     depends_on:
       api_postgres:
         condition: service_healthy
-        
+      auth_postgres:
+        condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: auth_postgres
+      # Container-to-container traffic must use postgres' internal port
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${AUTH_DB_INSTANCE}
+      KC_DB_USERNAME: ${AUTH_DB_USER}
+      KC_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
+    depends_on:
+      auth_postgres:
+        condition: service_healthy
+
 volumes:
-  pgdata:
+  api_pgdata:
+  auth_pgdata:

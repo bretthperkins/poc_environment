@@ -43,6 +43,3 @@ SELECT
     -- Distributes active status dynamically (90% True, 10% False)
     CASE WHEN mod(i, 10) = 0 THEN FALSE ELSE TRUE END AS is_active
 FROM generate_series(1, 100) AS i;
-
-
-select * from public.customers;
