@@ -1,5 +1,5 @@
 {
-  "realm": "poc",
+  "realm": "dev",
   "enabled": true,
   "displayName": "POC Realm",
   "registrationAllowed": false,
