@@ -3,7 +3,10 @@ FROM alpine/git:latest AS cloner
 WORKDIR /src
 ARG REPO_URL="https://github.com/bretthperkins/poc_nodejs"
 ARG REPO_BRANCH="main"
-RUN git clone --single-branch --branch ${REPO_BRANCH} ${REPO_URL} .
+# Build-time cache buster to force a fresh git clone when desired
+ARG CACHEBUST=0
+RUN git clone --single-branch --branch ${REPO_BRANCH} ${REPO_URL} . && \
+	echo "cloned ${REPO_URL}@${REPO_BRANCH} (cachebust=${CACHEBUST})"
 
 # Stage 2: Official, fully loaded Node environment
 FROM node:22-alpine
@@ -11,6 +14,17 @@ WORKDIR /app
 
 # Copy the source code directly from the cloner stage
 COPY --from=cloner /src /app
+
+# Replace legacy DB_SERVER_* env accesses with API_DB_SERVER_* at build time
+# This updates source files cloned from the remote repo so the app uses the
+# new API-prefixed environment variables.
+RUN find /app -type f -name "*.js" -print0 \
+	| xargs -0 sed -i \
+		-e "s/process.env.DB_SERVER_USER/process.env.API_DB_SERVER_USER/g" \
+		-e "s/process.env.DB_SERVER_PASSWORD/process.env.API_DB_SERVER_PASSWORD/g" \
+		-e "s/process.env.DB_SERVER_HOST/process.env.API_DB_SERVER_HOST/g" \
+		-e "s/process.env.DB_SERVER_PORT/process.env.API_DB_SERVER_PORT/g" \
+		-e "s/process.env.DB_SERVER_INSTANCE/process.env.API_DB_SERVER_INSTANCE/g" || true
 
 # Install all development dependencies (including nodemon)
 RUN npm install
